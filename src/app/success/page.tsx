@@ -34,9 +34,6 @@ function SuccessContent() {
         <a href="https://wa.me/213660445532" target="_blank" style={{ display: 'block', background: '#25D366', color: '#fff', padding: '13px', borderRadius: '10px', textDecoration: 'none', fontWeight: 700, fontSize: '15px' }}>
           💬 {lang === 'ar' ? 'تواصل معنا على واتساب' : 'Nous contacter sur WhatsApp'}
         </a>
-        <Link href="/track" style={{ display: 'block', background: 'var(--dark2)', color: 'var(--orange)', border: '1px solid var(--orange)', padding: '13px', borderRadius: '10px', textDecoration: 'none', fontWeight: 700, fontSize: '15px' }}>
-          🔍 {lang === 'ar' ? 'تتبع طلبي' : 'Suivre ma commande'}
-        </Link>
         <Link href="/" style={{ display: 'block', background: 'var(--orange)', color: '#fff', padding: '13px', borderRadius: '10px', textDecoration: 'none', fontWeight: 700, fontSize: '15px' }}>
           🏠 {lang === 'ar' ? 'العودة للمتجر' : 'Retour à la boutique'}
         </Link>

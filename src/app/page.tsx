@@ -11,7 +11,6 @@ import { useCartStore } from '@/store/cart'
 import { t } from '@/lib/i18n'
 import { demoProducts, demoCategories, demoBrands } from '@/lib/demo-data'
 import type { Product, Category } from '@/lib/supabase'
-import Link from 'next/link'
 
 const GoalsSection = dynamic(() => import('@/components/shop/GoalsSection'), { ssr: false })
 const BrandsSection = dynamic(() => import('@/components/shop/BrandsSection'), { ssr: false })
@@ -83,12 +82,6 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* GOALS */}
-      <GoalsSection lang={lang} />
-
-      {/* BRANDS */}
-      <BrandsSection lang={lang} />
-
       {/* ALL PRODUCTS */}
       <section className="max-w-6xl mx-auto px-4 mt-10 pb-20" id="products">
         <div className="flex items-center justify-between mb-4">
@@ -146,19 +139,11 @@ export default function HomePage() {
         <ProductsGrid products={filtered} lang={lang} />
       </section>
 
-      {/* TRACK ORDER BANNER */}
-      <div style={{ background: 'var(--dark2)', borderTop: '1px solid var(--gray1)', borderBottom: '1px solid var(--gray1)', padding: '24px 16px', textAlign: 'center' }}>
-        <div className="max-w-lg mx-auto">
-          <div className="text-2xl mb-2">📦</div>
-          <h3 className="font-black text-lg mb-1">{lang === 'ar' ? 'تتبع طلبك' : 'Suivre votre commande'}</h3>
-          <p className="text-sm mb-4" style={{ color: 'var(--gray4)' }}>
-            {lang === 'ar' ? 'أدخل رقم طلبك لمعرفة حالة التوصيل' : 'Entrez votre numéro de commande pour suivre la livraison'}
-          </p>
-          <Link href="/track" style={{ display: 'inline-block', background: 'var(--orange)', color: '#fff', padding: '10px 28px', borderRadius: '8px', fontWeight: 700, textDecoration: 'none', fontSize: '14px' }}>
-            {lang === 'ar' ? '🔍 تتبع الطلب' : '🔍 Suivre commande'}
-          </Link>
-        </div>
-      </div>
+      {/* GOALS */}
+      <GoalsSection lang={lang} />
+
+      {/* BRANDS */}
+      <BrandsSection lang={lang} />
 
       <Footer />
     </div>

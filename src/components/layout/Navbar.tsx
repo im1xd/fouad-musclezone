@@ -1,172 +1,349 @@
-'use client'
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { useCartStore } from '@/store/cart'
-import { t } from '@/lib/i18n'
-import { ShoppingBag, Search, Menu, X, MapPin } from 'lucide-react'
-import Image from 'next/image'
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useCartStore } from '@/store/cart';
 
 export default function Navbar() {
-  const { lang, setLang, count, toggleCart } = useCartStore()
-  const tr = t[lang]
-  const cartCount = count()
-  const [scrolled, setScrolled] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [searchQ, setSearchQ] = useState('')
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+  const cartCount = useCartStore((s) => s.items.reduce((acc, i) => acc + i.quantity, 0));
+
+  // Init dark mode from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const dark = saved === 'dark' || (!saved && prefersDark);
+    setIsDark(dark);
+    applyTheme(dark);
+  }, []);
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', fn, { passive: true })
-    return () => window.removeEventListener('scroll', fn)
-  }, [])
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  function applyTheme(dark: boolean) {
+    const html = document.documentElement;
+    if (dark) {
+      html.classList.add('dark');
+      html.classList.remove('light');
+    } else {
+      html.classList.remove('dark');
+      html.classList.add('light');
+    }
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+  }
+
+  function toggleTheme() {
+    const newDark = !isDark;
+    setIsDark(newDark);
+    applyTheme(newDark);
+  }
 
   const navLinks = [
-    { href: '/', label: lang === 'ar' ? 'الرئيسية' : 'Accueil' },
-    { href: '/#products', label: tr.allProducts },
-    { href: '/track', label: tr.trackOrder },
-    { href: '/contact', label: tr.contactUs },
-  ]
+    { href: '/', label: 'الرئيسية' },
+    { href: '/#products', label: 'جميع المنتجات' },
+    { href: '/contact', label: 'اتصل بنا' },
+  ];
 
   return (
-    <>
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 99,
-        background: scrolled ? 'rgba(8,8,8,0.97)' : 'var(--black)',
-        borderBottom: '1px solid var(--gray1)',
-        backdropFilter: 'blur(12px)',
-        transition: 'background 0.3s'
-      }}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between" style={{ height: '60px', padding: '0 16px' }}>
+    <nav className={`navbar ${scrolled ? 'scrolled' : ''}`} dir="rtl">
+      <div className="nav-container">
+        {/* Logo */}
+        <Link href="/" className="logo">
+          <span className="logo-icon">💪</span>
+          <span className="logo-text">
+            <span className="logo-fouad">FOUAD</span>
+            <span className="logo-zone"> MUSCLE ZONE</span>
+          </span>
+        </Link>
 
-          {/* LOGO */}
-          <Link href="/" className="flex items-center gap-2" style={{ textDecoration: 'none' }}>
-            <div style={{
-              width: 42, height: 42, borderRadius: '50%',
-              border: '2px solid var(--orange)',
-              overflow: 'hidden', flexShrink: 0,
-              background: 'var(--dark2)'
-            }}>
-              <img
-                src="/logo.jpg"
-                alt="Fouad Muscle Zone"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                onError={(e: any) => {
-                  e.target.style.display = 'none'
-                  e.target.parentElement.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:var(--orange)">FMZ</div>'
-                }}
-              />
-            </div>
-            <div>
-              <div style={{ fontWeight: 900, fontSize: '15px', color: 'var(--white)', lineHeight: 1.1, fontFamily: 'Barlow Condensed, Cairo, sans-serif', letterSpacing: '0.5px' }}>
-                FOUAD MUSCLE ZONE
-              </div>
-              <div style={{ fontSize: '10px', color: 'var(--orange)', fontWeight: 600 }}>
-                {lang === 'ar' ? 'مكملات غذائية أصلية' : 'Compléments authentiques'}
-              </div>
-            </div>
+        {/* Desktop Links */}
+        <div className="nav-links">
+          {navLinks.map((link) => (
+            <Link key={link.href} href={link.href} className="nav-link">
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* Right Actions */}
+        <div className="nav-actions">
+          {/* Dark/Light Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="theme-toggle"
+            aria-label={isDark ? 'الوضع المضيء' : 'الوضع المظلم'}
+            title={isDark ? 'الوضع المضيء' : 'الوضع المظلم'}
+          >
+            <span className="theme-icon">{isDark ? '☀️' : '🌙'}</span>
+          </button>
+
+          {/* Language Switch */}
+          <button className="lang-btn">FR</button>
+
+          {/* Cart */}
+          <Link href="/cart" className="cart-btn">
+            <span className="cart-icon">🛒</span>
+            {cartCount > 0 && (
+              <span className="cart-badge">{cartCount}</span>
+            )}
           </Link>
 
-          {/* DESKTOP NAV */}
-          <div className="hidden md:flex items-center gap-6">
-            {navLinks.map(l => (
-              <Link key={l.href} href={l.href} style={{ color: 'var(--gray5)', fontWeight: 600, fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s' }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'var(--orange)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'var(--gray5)')}>
-                {l.label}
-              </Link>
-            ))}
-          </div>
+          {/* Mobile Menu */}
+          <button
+            className={`hamburger ${mobileOpen ? 'open' : ''}`}
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="القائمة"
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+        </div>
+      </div>
 
-          {/* ACTIONS */}
-          <div className="flex items-center gap-2">
-            {/* LANG TOGGLE */}
-            <button
-              onClick={() => setLang(lang === 'ar' ? 'fr' : 'ar')}
-              style={{
-                background: 'var(--dark3)', border: '1px solid var(--gray1)',
-                borderRadius: '6px', padding: '4px 10px',
-                color: 'var(--gray5)', fontSize: '12px', fontWeight: 700, cursor: 'pointer'
-              }}
+      {/* Mobile Menu */}
+      {mobileOpen && (
+        <div className="mobile-menu">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="mobile-link"
+              onClick={() => setMobileOpen(false)}
             >
-              {lang === 'ar' ? 'FR' : 'AR'}
-            </button>
-
-            {/* SEARCH */}
-            <button
-              onClick={() => setSearchOpen(s => !s)}
-              style={{ background: 'none', border: 'none', color: 'var(--gray5)', cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center' }}
-            >
-              <Search size={19} />
-            </button>
-
-            {/* CART */}
-            <button
-              onClick={toggleCart}
-              style={{ background: 'none', border: 'none', color: 'var(--gray5)', cursor: 'pointer', padding: '6px', position: 'relative', display: 'flex', alignItems: 'center' }}
-            >
-              <ShoppingBag size={21} />
-              {cartCount > 0 && (
-                <span style={{
-                  position: 'absolute', top: 0, insetInlineEnd: 0,
-                  background: 'var(--orange)', color: '#fff',
-                  fontSize: '10px', fontWeight: 800,
-                  width: 17, height: 17, borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  lineHeight: 1
-                }}>{cartCount}</span>
-              )}
-            </button>
-
-            {/* MOBILE MENU */}
-            <button
-              className="md:hidden"
-              onClick={() => setMenuOpen(o => !o)}
-              style={{ background: 'none', border: 'none', color: 'var(--gray5)', cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center' }}
-            >
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+              {link.label}
+            </Link>
+          ))}
+          <div className="mobile-bottom">
+            <button onClick={toggleTheme} className="mobile-theme-btn">
+              {isDark ? '☀️ الوضع المضيء' : '🌙 الوضع المظلم'}
             </button>
           </div>
         </div>
+      )}
 
-        {/* SEARCH BAR */}
-        {searchOpen && (
-          <div style={{ borderTop: '1px solid var(--gray1)', padding: '10px 16px', background: 'var(--dark2)' }}>
-            <div className="max-w-2xl mx-auto">
-              <input
-                autoFocus
-                className="form-input-dark"
-                placeholder={lang === 'ar' ? 'ابحث عن منتج...' : 'Rechercher un produit...'}
-                value={searchQ}
-                onChange={e => {
-                  setSearchQ(e.target.value)
-                  if (e.target.value) {
-                    window.location.href = `/#products`
-                  }
-                }}
-                onKeyDown={e => { if (e.key === 'Enter') setSearchOpen(false) }}
-              />
-            </div>
-          </div>
-        )}
+      <style jsx>{`
+        .navbar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 100;
+          height: 64px;
+          background: var(--navbar-bg, rgba(255,255,255,0.92));
+          border-bottom: 1px solid var(--navbar-border, rgba(226,232,240,0.8));
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          transition: all 0.3s ease;
+        }
+        .navbar.scrolled {
+          box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+        }
 
-        {/* MOBILE MENU */}
-        {menuOpen && (
-          <div style={{ background: 'var(--dark2)', borderTop: '1px solid var(--gray1)', padding: '8px 0' }}>
-            {navLinks.map(l => (
-              <Link key={l.href} href={l.href}
-                onClick={() => setMenuOpen(false)}
-                style={{ display: 'block', padding: '12px 20px', color: 'var(--gray5)', fontWeight: 600, fontSize: '15px', textDecoration: 'none', borderBottom: '1px solid var(--gray1)' }}>
-                {l.label}
-              </Link>
-            ))}
-            <a href="https://wa.me/213660445532" target="_blank"
-              style={{ display: 'block', padding: '12px 20px', color: '#25D366', fontWeight: 700, fontSize: '15px', textDecoration: 'none' }}>
-              💬 WhatsApp: 0660 44 55 32
-            </a>
-          </div>
-        )}
-      </nav>
-    </>
-  )
+        .nav-container {
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 0 20px;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+        }
+
+        /* Logo */
+        .logo {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          text-decoration: none;
+          flex-shrink: 0;
+        }
+        .logo-icon { font-size: 24px; }
+        .logo-text { font-size: 14px; font-weight: 900; line-height: 1.1; }
+        .logo-fouad { color: var(--accent, #f97316); display: block; }
+        .logo-zone { color: var(--text-primary, #0f172a); font-size: 11px; display: block; }
+
+        /* Links */
+        .nav-links {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        @media (max-width: 768px) { .nav-links { display: none; } }
+        .nav-link {
+          padding: 8px 14px;
+          border-radius: 10px;
+          color: var(--text-secondary, #475569);
+          text-decoration: none;
+          font-size: 15px;
+          font-weight: 600;
+          transition: all 0.2s;
+          white-space: nowrap;
+        }
+        .nav-link:hover {
+          color: var(--accent, #f97316);
+          background: var(--accent-light, #fff7ed);
+        }
+
+        /* Actions */
+        .nav-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .theme-toggle {
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          border: 1.5px solid var(--border, #e2e8f0);
+          background: var(--bg-secondary, #f8fafc);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+          font-size: 18px;
+        }
+        .theme-toggle:hover {
+          transform: rotate(20deg) scale(1.1);
+          border-color: var(--accent, #f97316);
+          background: var(--accent-light, #fff7ed);
+        }
+        .theme-icon { line-height: 1; }
+
+        .lang-btn {
+          padding: 6px 12px;
+          border: 1.5px solid var(--border, #e2e8f0);
+          border-radius: 8px;
+          background: var(--bg-secondary, #f8fafc);
+          color: var(--text-secondary, #475569);
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .lang-btn:hover {
+          border-color: var(--accent, #f97316);
+          color: var(--accent, #f97316);
+        }
+
+        .cart-btn {
+          position: relative;
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          background: var(--accent, #f97316);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-decoration: none;
+          transition: all 0.25s;
+          font-size: 18px;
+        }
+        .cart-btn:hover { transform: scale(1.08); filter: brightness(1.1); }
+        .cart-badge {
+          position: absolute;
+          top: -6px;
+          left: -6px;
+          background: #ef4444;
+          color: #fff;
+          font-size: 11px;
+          font-weight: 800;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        /* Hamburger */
+        .hamburger {
+          display: none;
+          flex-direction: column;
+          gap: 5px;
+          background: none;
+          border: none;
+          padding: 6px;
+          cursor: pointer;
+        }
+        @media (max-width: 768px) { .hamburger { display: flex; } }
+        .hamburger span {
+          display: block;
+          width: 22px;
+          height: 2px;
+          background: var(--text-primary, #0f172a);
+          border-radius: 2px;
+          transition: all 0.3s;
+        }
+        .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .hamburger.open span:nth-child(2) { opacity: 0; }
+        .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+        /* Mobile Menu */
+        .mobile-menu {
+          position: absolute;
+          top: 64px;
+          left: 0;
+          right: 0;
+          background: var(--bg-primary, #fff);
+          border-bottom: 1px solid var(--border, #e2e8f0);
+          padding: 12px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+          animation: slideDown 0.25s ease;
+        }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .mobile-link {
+          padding: 12px 16px;
+          border-radius: 10px;
+          color: var(--text-primary, #0f172a);
+          text-decoration: none;
+          font-size: 16px;
+          font-weight: 600;
+          transition: all 0.2s;
+        }
+        .mobile-link:hover {
+          background: var(--accent-light, #fff7ed);
+          color: var(--accent, #f97316);
+        }
+        .mobile-bottom {
+          border-top: 1px solid var(--border, #e2e8f0);
+          margin-top: 8px;
+          padding-top: 8px;
+        }
+        .mobile-theme-btn {
+          width: 100%;
+          padding: 12px 16px;
+          border: 1.5px solid var(--border, #e2e8f0);
+          border-radius: 10px;
+          background: var(--bg-secondary, #f8fafc);
+          color: var(--text-primary, #0f172a);
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          text-align: right;
+          transition: all 0.2s;
+          font-family: inherit;
+        }
+        .mobile-theme-btn:hover {
+          border-color: var(--accent, #f97316);
+          color: var(--accent, #f97316);
+          background: var(--accent-light, #fff7ed);
+        }
+      `}</style>
+    </nav>
+  );
 }

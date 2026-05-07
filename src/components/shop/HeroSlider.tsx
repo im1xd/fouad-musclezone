@@ -1,178 +1,575 @@
-'use client'
-import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
-import { useCartStore } from '@/store/cart'
-import { t } from '@/lib/i18n'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+'use client';
 
-const SLIDES = [
+import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+
+interface Slide {
+  id: number;
+  image: string;
+  badge: string;
+  title: string;
+  subtitle: string;
+  cta: string;
+  price?: string;
+  accent: string;
+}
+
+const DEFAULT_SLIDES: Slide[] = [
   {
-    bg: 'linear-gradient(135deg, #0a0500 0%, #1a0800 50%, #0d0400 100%)',
-    img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=700&q=85',
-    overlay: 'rgba(255,107,0,0.08)',
-    accent: '#FF6B00',
-    tag: { ar: '🔥 الأكثر مبيعاً', fr: '🔥 Best-seller' },
-    title: { ar: 'تفوق على\nحدودك', fr: 'DÉPASSEZ\nVOS LIMITES' },
-    sub: { ar: 'أفضل بروتين واي أصلي بأسعار لا تُنافَس', fr: 'La meilleure whey protéine aux meilleurs prix' },
-    btn: { ar: 'تسوق الآن', fr: 'Acheter maintenant' },
-    href: '/#products',
-    product: { ar: 'Whey Protein Gold Standard', fr: 'Whey Protein Gold Standard' },
-    price: '4,500 دج',
+    id: 1,
+    image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1400&q=90',
+    badge: '🔥 الأكثر مبيعاً',
+    title: 'تفوق على حدودك',
+    subtitle: 'أفضل بروتين واي أصلي بأسعار لا تُنافَس',
+    cta: 'تسوق الآن',
+    price: 'Whey Protein Gold Standard  4,500 دج',
+    accent: '#f97316',
   },
   {
-    bg: 'linear-gradient(135deg, #050010 0%, #0f0520 50%, #050010 100%)',
-    img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=700&q=85',
-    overlay: 'rgba(124,58,237,0.08)',
-    accent: '#7C3AED',
-    tag: { ar: '💪 قوة حقيقية', fr: '💪 Force réelle' },
-    title: { ar: 'كرياتين\n100% نقي', fr: 'CRÉATINE\n100% PURE' },
-    sub: { ar: 'زيادة القوة والطاقة أثناء التمرين', fr: 'Augmentez votre force et énergie à l\'entraînement' },
-    btn: { ar: 'اكتشف الكرياتين', fr: 'Voir créatine' },
-    href: '/#products',
-    product: { ar: 'Creatine Monohydrate 300g', fr: 'Créatine Monohydrate 300g' },
-    price: '2,800 دج',
+    id: 2,
+    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1400&q=90',
+    badge: '💪 قوة مضاعفة',
+    title: 'ابنِ جسمك بالعلم',
+    subtitle: 'كرياتين مونوهيدرات للقوة والأداء الأمثل',
+    cta: 'اكتشف المزيد',
+    price: 'Creatine Monohydrate  2,800 دج',
+    accent: '#3b82f6',
   },
   {
-    bg: 'linear-gradient(135deg, #000d05 0%, #001a0a 50%, #000d05 100%)',
-    img: 'https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=700&q=85',
-    overlay: 'rgba(34,197,94,0.06)',
-    accent: '#22c55e',
-    tag: { ar: '🔥 احرق الدهون', fr: '🔥 Brûlez les graisses' },
-    title: { ar: 'تنشيف\naحترافي', fr: 'SÈCHE\nPROFESSIONNELLE' },
-    sub: { ar: 'أفضل مكملات التنشيف في الجزائر', fr: 'Meilleurs compléments de sèche en Algérie' },
-    btn: { ar: 'ابدأ التنشيف', fr: 'Commencer la sèche' },
-    href: '/#products',
-    product: { ar: 'Fat Burner Pro + L-Carnitine', fr: 'Fat Burner Pro + L-Carnitine' },
-    price: '3,800 دج',
+    id: 3,
+    image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=1400&q=90',
+    badge: '⚡ Pre-Workout',
+    title: 'انطلق بلا توقف',
+    subtitle: 'طاقة انفجارية لكل تمرين — أداء على أعلى مستوى',
+    cta: 'احصل عليه الآن',
+    price: 'Pre-Workout Storm  3,200 دج',
+    accent: '#a855f7',
   },
-]
+  {
+    id: 4,
+    image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1400&q=90',
+    badge: '🏆 نتائج مضمونة',
+    title: 'جسمك، أهدافك',
+    subtitle: 'مكملات أصلية 100% مع ضمان الجودة والتوصيل لكل الجزائر',
+    cta: 'تسوق الآن',
+    price: 'Mass Gainer 5kg  5,500 دج',
+    accent: '#10b981',
+  },
+];
 
-export default function HeroSlider() {
-  const lang = useCartStore(s => s.lang)
-  const [current, setCurrent] = useState(0)
-  const [animating, setAnimating] = useState(false)
+interface HeroSliderProps {
+  slides?: Slide[];
+}
 
-  const go = useCallback((idx: number) => {
-    if (animating) return
-    setAnimating(true)
-    setCurrent(idx)
-    setTimeout(() => setAnimating(false), 600)
-  }, [animating])
+export default function HeroSlider({ slides = DEFAULT_SLIDES }: HeroSliderProps) {
+  const [current, setCurrent] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isDark, setIsDark] = useState(true);
 
-  const next = () => go((current + 1) % SLIDES.length)
-  const prev = () => go((current - 1 + SLIDES.length) % SLIDES.length)
+  const goTo = useCallback(
+    (index: number) => {
+      if (isAnimating) return;
+      setIsAnimating(true);
+      setCurrent(index);
+      setTimeout(() => setIsAnimating(false), 800);
+    },
+    [isAnimating]
+  );
+
+  const next = useCallback(() => {
+    goTo((current + 1) % slides.length);
+  }, [current, slides.length, goTo]);
+
+  const prev = useCallback(() => {
+    goTo((current - 1 + slides.length) % slides.length);
+  }, [current, slides.length, goTo]);
 
   useEffect(() => {
-    const timer = setInterval(next, 6000)
-    return () => clearInterval(timer)
-  }, [current])
+    const timer = setInterval(next, 5000);
+    return () => clearInterval(timer);
+  }, [next]);
 
-  const slide = SLIDES[current]
+  // Sync dark mode with document
+  useEffect(() => {
+    const html = document.documentElement;
+    if (isDark) {
+      html.classList.add('dark');
+      html.classList.remove('light');
+    } else {
+      html.classList.remove('dark');
+      html.classList.add('light');
+    }
+  }, [isDark]);
+
+  const slide = slides[current];
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', minHeight: 'clamp(380px, 55vw, 580px)', background: slide.bg, transition: 'background 0.8s ease' }}>
-      {/* BG Image */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-        <img
-          src={slide.img}
-          alt=""
-          className="hero-bg"
-          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', opacity: 0.3 }}
-        />
-        <div style={{ position: 'absolute', inset: 0, background: slide.bg, opacity: 0.85 }} />
-        <div style={{ position: 'absolute', inset: 0, background: slide.overlay }} />
+    <section className="hero-slider" dir="rtl">
+      {/* Dark/Light Mode Toggle */}
+      <button
+        onClick={() => setIsDark(!isDark)}
+        className="mode-toggle"
+        title={isDark ? 'الوضع المضيء' : 'الوضع المظلم'}
+        aria-label="تبديل الوضع"
+      >
+        {isDark ? '☀️' : '🌙'}
+      </button>
+
+      {/* Background Images with Ken Burns */}
+      <div className="slides-bg">
+        {slides.map((s, i) => (
+          <div
+            key={s.id}
+            className={`slide-bg ${i === current ? 'active' : ''}`}
+            style={{ backgroundImage: `url(${s.image})` }}
+          />
+        ))}
+        <div className="slide-overlay" />
       </div>
 
-      {/* GRID PATTERN */}
-      <div className="grid-pattern" style={{ position: 'absolute', inset: 0, zIndex: 1, opacity: 0.6 }} />
+      {/* Content */}
+      <div className={`slide-content ${isAnimating ? 'animating' : ''}`}>
+        <span className="badge" style={{ '--accent': slide.accent } as React.CSSProperties}>
+          {slide.badge}
+        </span>
 
-      {/* CONTENT */}
-      <div className="max-w-6xl mx-auto relative" style={{ zIndex: 2, padding: '0 16px', height: '100%', display: 'flex', alignItems: 'center', minHeight: 'inherit' }}>
-        <div className="grid md:grid-cols-2 items-center w-full gap-8">
+        <h1 className="slide-title">{slide.title}</h1>
+        <p className="slide-subtitle">{slide.subtitle}</p>
 
-          {/* TEXT */}
-          <div key={`text-${current}`} className="fade-in-up" style={{ order: lang === 'fr' ? 1 : 2 }}>
-            <div className="delay-1 fade-in-up" style={{ display: 'inline-block', background: `rgba(${slide.accent === '#FF6B00' ? '255,107,0' : slide.accent === '#7C3AED' ? '124,58,237' : '34,197,94'},0.15)`, border: `1px solid ${slide.accent}30`, color: slide.accent, padding: '4px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, marginBottom: '16px' }}>
-              {slide.tag[lang]}
-            </div>
-
-            <h1 className="delay-2 fade-in-up" style={{
-              fontFamily: 'Bebas Neue, Barlow Condensed, sans-serif',
-              fontSize: 'clamp(42px, 8vw, 80px)',
-              fontWeight: 900,
-              lineHeight: 1.0,
-              color: '#fff',
-              marginBottom: '16px',
-              textShadow: `0 0 40px ${slide.accent}40`,
-              whiteSpace: 'pre-line',
-              letterSpacing: '2px',
-            }}>
-              {slide.title[lang]}
-            </h1>
-
-            <p className="delay-3 fade-in-up" style={{ color: 'var(--gray5)', fontSize: '15px', marginBottom: '24px', lineHeight: 1.6, maxWidth: '380px' }}>
-              {slide.sub[lang]}
-            </p>
-
-            <div className="delay-4 fade-in-up flex items-center gap-3 flex-wrap">
-              <a href={slide.href} style={{
-                background: slide.accent, color: '#fff',
-                padding: '13px 28px', borderRadius: '8px',
-                fontWeight: 800, fontSize: '15px', textDecoration: 'none',
-                display: 'inline-block', transition: 'transform 0.2s',
-                boxShadow: `0 4px 20px ${slide.accent}40`,
-              }}
-                onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
-                onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}>
-                {slide.btn[lang]}
-              </a>
-              <div style={{ color: 'var(--gray4)', fontSize: '13px' }}>
-                <span style={{ color: 'var(--gray5)', fontWeight: 700 }}>{slide.product[lang]}</span>
-                <br />
-                <span style={{ color: slide.accent, fontWeight: 800, fontSize: '16px' }}>{slide.price}</span>
-              </div>
-            </div>
-
-            {/* TRUST */}
-            <div className="delay-4 fade-in-up flex items-center gap-4 mt-5 flex-wrap">
-              {['✅ جودة مضمونة', '🚚 دفع عند الاستلام', '📦 توصيل سريع'].map((item, i) => (
-                <span key={i} style={{ fontSize: '12px', color: 'var(--gray4)', display: 'flex', alignItems: 'center', gap: '4px' }}>{item}</span>
-              ))}
-            </div>
+        {slide.price && (
+          <div className="price-tag">
+            <span className="price-check">✅</span>
+            {slide.price}
           </div>
+        )}
 
-          {/* PRODUCT IMAGE */}
-          <div key={`img-${current}`} className="slide-in-right hidden md:flex items-center justify-center" style={{ order: lang === 'fr' ? 2 : 1 }}>
-            <div style={{ position: 'relative', width: '280px', height: '280px' }}>
-              <div style={{ position: 'absolute', inset: '-20px', borderRadius: '50%', background: `radial-gradient(circle, ${slide.accent}20 0%, transparent 70%)`, animation: 'pulse-wa 3s infinite' }} />
-              <img
-                src={slide.img}
-                alt={slide.product[lang]}
-                style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.5))', position: 'relative', zIndex: 1 }}
-              />
-            </div>
-          </div>
+        <div className="slide-badges">
+          <span>✅ جودة مضمونة</span>
+          <span>🚚 دفع عند الاستلام</span>
+          <span>📦 توصيل سريع</span>
+        </div>
+
+        <div className="slide-actions">
+          <Link href="#products" className="btn-primary" style={{ '--accent': slide.accent } as React.CSSProperties}>
+            {slide.cta}
+          </Link>
+          <Link href="/track" className="btn-secondary">
+            تتبع طلبي
+          </Link>
         </div>
       </div>
 
-      {/* ARROWS */}
-      <button onClick={prev} style={{ position: 'absolute', top: '50%', right: '12px', transform: 'translateY(-50%)', zIndex: 10, background: 'rgba(0,0,0,0.5)', border: '1px solid var(--gray1)', borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', transition: 'background 0.2s' }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'var(--orange)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.5)')}>
-        <ChevronRight size={20} />
-      </button>
-      <button onClick={next} style={{ position: 'absolute', top: '50%', left: '12px', transform: 'translateY(-50%)', zIndex: 10, background: 'rgba(0,0,0,0.5)', border: '1px solid var(--gray1)', borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', transition: 'background 0.2s' }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'var(--orange)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.5)')}>
-        <ChevronLeft size={20} />
-      </button>
-
-      {/* DOTS */}
-      <div style={{ position: 'absolute', bottom: '16px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '8px', zIndex: 10 }}>
-        {SLIDES.map((_, i) => (
-          <button key={i} onClick={() => go(i)} style={{ width: i === current ? 24 : 8, height: 8, borderRadius: '4px', background: i === current ? 'var(--orange)' : 'rgba(255,255,255,0.3)', border: 'none', cursor: 'pointer', transition: 'all 0.3s' }} />
+      {/* Stats */}
+      <div className="slide-stats">
+        {[
+          { icon: '💊', num: '+500', label: 'منتج أصلي' },
+          { icon: '🏆', num: '+10K', label: 'عميل راضٍ' },
+          { icon: '🚚', num: '48h', label: 'أسرع توصيل' },
+          { icon: '✅', num: '100%', label: 'منتجات أصلية' },
+        ].map((stat) => (
+          <div key={stat.label} className="stat-item">
+            <span className="stat-icon">{stat.icon}</span>
+            <span className="stat-num">{stat.num}</span>
+            <span className="stat-label">{stat.label}</span>
+          </div>
         ))}
       </div>
-    </div>
-  )
+
+      {/* Navigation */}
+      <div className="slide-nav">
+        <button onClick={prev} className="nav-btn nav-prev" aria-label="السابق">
+          ‹
+        </button>
+        <div className="dots">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              className={`dot ${i === current ? 'active' : ''}`}
+              style={{ '--accent': slide.accent } as React.CSSProperties}
+              aria-label={`الشريحة ${i + 1}`}
+            />
+          ))}
+        </div>
+        <button onClick={next} className="nav-btn nav-next" aria-label="التالي">
+          ›
+        </button>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="progress-bar">
+        <div
+          className="progress-fill"
+          key={current}
+          style={{ '--accent': slide.accent } as React.CSSProperties}
+        />
+      </div>
+
+      <style jsx>{`
+        .hero-slider {
+          position: relative;
+          height: 100vh;
+          min-height: 600px;
+          overflow: hidden;
+          font-family: 'Tajawal', 'Cairo', sans-serif;
+        }
+
+        /* ── Dark / Light theming ── */
+        :global(html.dark) .hero-slider {
+          --overlay-start: rgba(5, 10, 20, 0.75);
+          --overlay-end: rgba(5, 10, 20, 0.4);
+          --text-primary: #ffffff;
+          --text-secondary: rgba(255,255,255,0.85);
+          --stat-bg: rgba(255,255,255,0.08);
+          --stat-border: rgba(255,255,255,0.15);
+          --btn-sec-bg: rgba(255,255,255,0.1);
+          --btn-sec-border: rgba(255,255,255,0.3);
+          --btn-sec-color: #fff;
+          --badge-bg: rgba(0,0,0,0.5);
+          --price-bg: rgba(0,0,0,0.4);
+        }
+        :global(html.light) .hero-slider,
+        :global(html:not(.dark)) .hero-slider {
+          --overlay-start: rgba(240, 245, 255, 0.82);
+          --overlay-end: rgba(240, 245, 255, 0.35);
+          --text-primary: #0f172a;
+          --text-secondary: #1e293b;
+          --stat-bg: rgba(255,255,255,0.7);
+          --stat-border: rgba(0,0,0,0.1);
+          --btn-sec-bg: rgba(255,255,255,0.6);
+          --btn-sec-border: rgba(0,0,0,0.2);
+          --btn-sec-color: #0f172a;
+          --badge-bg: rgba(255,255,255,0.7);
+          --price-bg: rgba(255,255,255,0.6);
+        }
+
+        /* ── Mode Toggle ── */
+        .mode-toggle {
+          position: absolute;
+          top: 80px;
+          left: 20px;
+          z-index: 50;
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          border: 2px solid var(--stat-border, rgba(255,255,255,0.3));
+          background: var(--stat-bg, rgba(255,255,255,0.1));
+          font-size: 20px;
+          cursor: pointer;
+          backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .mode-toggle:hover {
+          transform: scale(1.1) rotate(15deg);
+          background: rgba(255,255,255,0.25);
+        }
+
+        /* ── Background Slides ── */
+        .slides-bg {
+          position: absolute;
+          inset: 0;
+        }
+        .slide-bg {
+          position: absolute;
+          inset: 0;
+          background-size: cover;
+          background-position: center;
+          opacity: 0;
+          transform: scale(1.08);
+          transition: opacity 0.9s ease, transform 0s;
+        }
+        .slide-bg.active {
+          opacity: 1;
+          transform: scale(1);
+          animation: kenBurns 6s ease-in-out forwards;
+        }
+        @keyframes kenBurns {
+          from { transform: scale(1.08); }
+          to   { transform: scale(1.0); }
+        }
+
+        .slide-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            135deg,
+            var(--overlay-start) 0%,
+            var(--overlay-end) 60%,
+            transparent 100%
+          );
+        }
+
+        /* ── Content ── */
+        .slide-content {
+          position: absolute;
+          top: 50%;
+          right: 6%;
+          transform: translateY(-50%);
+          max-width: 600px;
+          z-index: 10;
+          transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .slide-content.animating {
+          opacity: 0;
+          transform: translateY(calc(-50% + 20px));
+        }
+
+        .badge {
+          display: inline-block;
+          background: var(--badge-bg, rgba(0,0,0,0.5));
+          color: var(--accent, #f97316);
+          border: 1px solid var(--accent, #f97316);
+          border-radius: 100px;
+          padding: 6px 16px;
+          font-size: 14px;
+          font-weight: 700;
+          margin-bottom: 16px;
+          backdrop-filter: blur(8px);
+          animation: fadeSlideDown 0.6s ease 0.1s both;
+        }
+
+        .slide-title {
+          font-size: clamp(2rem, 5vw, 3.5rem);
+          font-weight: 900;
+          color: var(--text-primary, #fff);
+          line-height: 1.15;
+          margin: 0 0 12px;
+          animation: fadeSlideDown 0.6s ease 0.2s both;
+          text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+        }
+
+        .slide-subtitle {
+          font-size: clamp(1rem, 2vw, 1.25rem);
+          color: var(--text-secondary, rgba(255,255,255,0.85));
+          margin: 0 0 18px;
+          animation: fadeSlideDown 0.6s ease 0.3s both;
+        }
+
+        .price-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: var(--price-bg, rgba(0,0,0,0.4));
+          color: var(--text-primary, #fff);
+          border-radius: 12px;
+          padding: 10px 18px;
+          font-size: 15px;
+          font-weight: 700;
+          margin-bottom: 16px;
+          backdrop-filter: blur(8px);
+          animation: fadeSlideDown 0.6s ease 0.35s both;
+        }
+
+        .slide-badges {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-bottom: 24px;
+          animation: fadeSlideDown 0.6s ease 0.4s both;
+        }
+        .slide-badges span {
+          font-size: 13px;
+          color: var(--text-secondary, rgba(255,255,255,0.85));
+          background: var(--stat-bg, rgba(255,255,255,0.1));
+          border: 1px solid var(--stat-border, rgba(255,255,255,0.2));
+          border-radius: 20px;
+          padding: 5px 12px;
+          backdrop-filter: blur(6px);
+        }
+
+        .slide-actions {
+          display: flex;
+          gap: 14px;
+          animation: fadeSlideDown 0.6s ease 0.5s both;
+        }
+        .btn-primary {
+          background: var(--accent, #f97316);
+          color: #fff;
+          border: none;
+          border-radius: 14px;
+          padding: 14px 32px;
+          font-size: 16px;
+          font-weight: 800;
+          text-decoration: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+          letter-spacing: 0.5px;
+        }
+        .btn-primary:hover {
+          transform: translateY(-3px) scale(1.03);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+          filter: brightness(1.1);
+        }
+        .btn-secondary {
+          background: var(--btn-sec-bg, rgba(255,255,255,0.1));
+          color: var(--btn-sec-color, #fff);
+          border: 1.5px solid var(--btn-sec-border, rgba(255,255,255,0.3));
+          border-radius: 14px;
+          padding: 14px 28px;
+          font-size: 16px;
+          font-weight: 600;
+          text-decoration: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          backdrop-filter: blur(8px);
+        }
+        .btn-secondary:hover {
+          background: var(--btn-sec-bg);
+          transform: translateY(-2px);
+          filter: brightness(1.15);
+        }
+
+        /* ── Stats Bar ── */
+        .slide-stats {
+          position: absolute;
+          bottom: 80px;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          gap: 12px;
+          z-index: 10;
+          background: var(--stat-bg, rgba(255,255,255,0.08));
+          border: 1px solid var(--stat-border, rgba(255,255,255,0.15));
+          border-radius: 20px;
+          padding: 14px 24px;
+          backdrop-filter: blur(16px);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        .stat-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+          padding: 0 16px;
+          border-left: 1px solid var(--stat-border, rgba(255,255,255,0.15));
+        }
+        .stat-item:last-child {
+          border-left: none;
+        }
+        .stat-icon { font-size: 18px; }
+        .stat-num {
+          font-size: 18px;
+          font-weight: 900;
+          color: var(--text-primary, #fff);
+        }
+        .stat-label {
+          font-size: 11px;
+          color: var(--text-secondary, rgba(255,255,255,0.7));
+        }
+
+        /* ── Navigation ── */
+        .slide-nav {
+          position: absolute;
+          bottom: 28px;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          z-index: 10;
+        }
+        .dots {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+        .dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.4);
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          padding: 0;
+        }
+        .dot.active {
+          background: var(--accent, #f97316);
+          width: 24px;
+          border-radius: 4px;
+        }
+        .nav-btn {
+          background: var(--stat-bg, rgba(255,255,255,0.1));
+          border: 1px solid var(--stat-border, rgba(255,255,255,0.2));
+          color: var(--text-primary, #fff);
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          font-size: 22px;
+          line-height: 1;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          backdrop-filter: blur(8px);
+        }
+        .nav-btn:hover {
+          background: rgba(255,255,255,0.25);
+          transform: scale(1.1);
+        }
+
+        /* ── Progress Bar ── */
+        .progress-bar {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background: rgba(255,255,255,0.15);
+          z-index: 20;
+        }
+        .progress-fill {
+          height: 100%;
+          background: var(--accent, #f97316);
+          animation: progress 5s linear forwards;
+        }
+        @keyframes progress {
+          from { width: 0%; }
+          to   { width: 100%; }
+        }
+
+        /* ── Animations ── */
+        @keyframes fadeSlideDown {
+          from { opacity: 0; transform: translateY(-16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+          .slide-content {
+            right: 5%;
+            left: 5%;
+            max-width: 100%;
+            text-align: center;
+          }
+          .slide-badges {
+            justify-content: center;
+          }
+          .slide-actions {
+            justify-content: center;
+            flex-wrap: wrap;
+          }
+          .slide-stats {
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 90%;
+            bottom: 70px;
+          }
+          .stat-item {
+            border-left: none;
+            border-bottom: 1px solid var(--stat-border, rgba(255,255,255,0.15));
+          }
+          .mode-toggle {
+            top: 70px;
+            left: 10px;
+          }
+        }
+      `}</style>
+    </section>
+  );
 }

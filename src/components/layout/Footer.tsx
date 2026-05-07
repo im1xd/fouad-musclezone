@@ -36,7 +36,6 @@ export default function Footer() {
             <div style={{ fontWeight: 800, marginBottom: '14px', color: '#fff' }}>{lang === 'ar' ? 'روابط سريعة' : 'Liens rapides'}</div>
             {[
               { href: '/#products', label: { ar: 'جميع المنتجات', fr: 'Tous les produits' } },
-              { href: '/track', label: { ar: 'تتبع الطلب', fr: 'Suivre commande' } },
               { href: '/admin', label: { ar: 'لوحة التحكم', fr: 'Dashboard Admin' } },
             ].map(l => (
               <Link key={l.href} href={l.href}
